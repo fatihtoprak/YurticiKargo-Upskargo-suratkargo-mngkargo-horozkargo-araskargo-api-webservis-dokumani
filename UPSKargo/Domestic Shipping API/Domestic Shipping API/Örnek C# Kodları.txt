@@ -1,0 +1,94 @@
+            string musterikodu   = "AAAAAA";
+            string kullanicikodu = "BBBBBB";
+            string sifre         = "CCCCCC";
+
+            CreateShipmentSoap soap1 = new CreateShipmentSoapClient();
+            Login_Type1RequestBody LoginType1RequestBody = new Login_Type1RequestBody(musterikodu, kullanicikodu, sifre);
+            Login_Type1Request Logintype1Request = new Login_Type1Request(LoginType1RequestBody);
+            var LoginResult = soap1.Login_Type1(Logintype1Request);
+            string sessionID = LoginResult.Body.Login_Type1Result.SessionID;
+
+            ShipmentInfo_Type3 ship = new ShipmentInfo_Type3();
+            ship.ShipperAccountNumber = "AAAAAA";
+            ship.ShipperName = "UPS TURKIYE";
+            ship.ShipperContactName = "Serkan KOSE";
+            ship.ShipperAddress = "MEVLANA CD. NO:85 UPS PLAZA ";
+            ship.ShipperCityCode = 34;
+            ship.ShipperAreaCode = 1707;
+            ship.ShipperPostalCode = "34896";
+            ship.ShipperPhoneNumber = " 0212 413 22 22 ";
+            ship.ShipperMobilePhoneNumber = "0555 555 55 55";
+            ship.ShipperEMail = "skose@ups.com";
+            ship.ShipperExpenseCode = "";
+
+
+            ship.ConsigneeAccountNumber = "";
+            ship.ConsigneeName = "KOSE A.S";
+            ship.ConsigneeContactName = "ISMET KUTUK";
+            ship.ConsigneeAddress = "DUMLUPINAR MH. ALIBABA CD. NO:57";
+            ship.ConsigneeCityCode = 34;
+            ship.ConsigneeAreaCode = 463;
+            ship.ConsigneePostalCode = "34400";
+            ship.ConsigneeMobilePhoneNumber = "0444 444 44 44";
+            ship.ConsigneePhoneNumber = "0444 555 66 77";
+            ship.ConsigneeEMail = "ismet@hotmail.com";
+            ship.ConsigneeExpenseCode = "";
+
+
+            ship.ServiceLevel = 3;	// (Acil Express Gönderi=2 , Standart Gönderi=3) 
+            ship.PaymentType = 2; 	// (Alýcý Ödemeli=1 , Gönderen Ödemeli=2 , Üçüncü Sahýs Ödemeli=4)
+            ship.PackageType = "K";	// (Dosya=D , Koli=K)
+            ship.NumberOfPackages = 1;  // (Sevk Adresine Gidecek Paket Sayýsý)
+            ship.CustomerReferance = "";
+            ship.CustomerInvoiceNumber = "SERKAN123456";
+            ship.DeliveryNotificationEmail = "skose@ups.com";
+            ship.IdControlFlag = 0;
+            ship.PhonePrealertFlag = 0;
+            ship.SmsToShipper = 0;
+            ship.SmsToConsignee = 0;
+            ship.InsuranceValue = 0;
+            ship.InsuranceValueCurrency = "0";
+            ship.ValueOfGoods = 0;            //TAHSIL EDILEN MAL BEDELI, INT OLARAK
+            ship.ValueOfGoodsCurrency = "TL"; //PARA BIRIMI (TL, EUR, USD OLABILIR) 
+            ship.ValueOfGoodsPaymentType = 1; //ODEME SEKLI (1= NAKIT, 2= CEK, 3= KREDI KARTI TEK CEKIM)
+            ship.ThirdPartyAccountNumber = "";
+            ship.ThirdPartyExpenseCode = "";
+
+
+            ship.PackageDimensions = new UPS.DimensionInfo[]
+            {new UPS.DimensionInfo()
+            {
+               DescriptionOfGoods = "ORTA BOY KOLÝ", // KOLI ACIKLAMASI
+               Height = 15,  //YUKSEKLIK
+               Length = 20,  //UZUNLUK
+               Width = 25,   //GENISLIK
+               Weight = 2    //AGIRLIK
+            }, 
+            };
+
+
+            CreateShipmentSoap soap2 = new CreateShipmentSoapClient();
+            CreateShipment_Type3RequestBody ShipType3Body = new CreateShipment_Type3RequestBody(sessionID, ship,true,true);
+            CreateShipment_Type3Request ShipType3 = new CreateShipment_Type3Request(ShipType3Body);
+            var result = soap2.CreateShipment_Type3(ShipType3);
+
+	    // WebServicenin oluþturdugu UPS takip numarasý. Tüm UPS takip numaralarý '1Z' ile baþlar.
+            string ship_num = result.Body.CreateShipment_Type3Result.ShipmentNo;       
+	    // WebServicenin oluþturduðu gönderi barkodu.      
+            ArrayOfString ship_png = result.Body.CreateShipment_Type3Result.BarkodArrayPng;
+
+	    // Gönderi barkodumuzu *.jpeg formatýna convert edip bilgisayarýmýza kayýt ettim.
+            byte[] b = Convert.FromBase64String(ship_png[0]);
+            MemoryStream ms1 = new MemoryStream(b, 0, b.Length);
+            ms1 = new System.IO.MemoryStream(b);
+            Image img = System.Drawing.Image.FromStream(ms1);
+            img.Save(@"c:\UPS\barkod.Jpeg", System.Drawing.Imaging.ImageFormat.Jpeg);
+            img.Dispose();
+            ms1.Close();
+
+	    // C sürücüsüne kayýt ettiðiniz gönderi barkodunu aþaðýda ölçelerini verdiðimiz deðerlerde print edilmeli ve
+	    // gönderilerecek paketin üstüne yapýþtýrýlmalýdýr. Barkod görüntüsünü aþaðýdaki pixel boyutlarýnda yazdýrmaya 
+            // dikkat edelim aksi taktirde UPS cihazlarý tarafýndan okunmaz.
+ 
+            System.Drawing.Image image = System.Drawing.Image.FromFile(@"C:\UPS\barkod.jpeg");
+            e.Graphics.DrawImage(image, 10, 10, 380, 540);
